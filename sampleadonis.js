@@ -2718,6 +2718,6 @@ module.exports ={
 		"_class": "Diagram procesów biznesowych (BPMN 2.0)",
 		"_idclass": "MT_BUSINESS_PROCESS_DIAGRAM_BPMN_20",
 		"_variantid": "{1132d8c5-e71f-45ec-ab6a-3162ca99bc81}",
-		"_lang": "pl"
-	}
+		"_lang": "pl",
+			}
 }
