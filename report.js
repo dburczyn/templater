@@ -1,15 +1,16 @@
 var createReport = require('docx-templates');
-var sampledata = require('./sampleadonis');
+var sampledata = require('./parsedadonis');
+// var sampledata = require('./sampleadonis');
 var statics = require('./statics');
 sampledata.statics = statics;
 const qrcode = require('yaqrcode');
 function prepareData(sampledata) {
   var preparedData = {};
-  preparedData.name=sampledata.model._name;
-  preparedData.class=sampledata.model._class;
-  preparedData.img=sampledata.model.base64image;
+  preparedData.name=sampledata.name.publishing.model._name;
+  preparedData.class=sampledata.name.publishing.model._class;
+  preparedData.img=sampledata.name.publishing.model.base64image;
   preparedData.chapters = [];
-  for (let [index, val] of sampledata.model.notebook.chapter.entries()) {
+  for (let [index, val] of sampledata.name.publishing.model.notebook.chapter.entries()) {
 var chapter = {}
 chapter.name = val._name
 chapter.attributes =[]
@@ -35,7 +36,7 @@ for (let [aindex, aval] of attributes.entries()) {
 preparedData.chapters[index]=chapter
 }
 preparedData.objects = [];
-for (let [oindex, oval] of sampledata.model.object.entries()) {
+for (let [oindex, oval] of sampledata.name.publishing.model.object.entries()) {
   var object = {}
   object.name=oval._name;
   object.class=oval._class;
