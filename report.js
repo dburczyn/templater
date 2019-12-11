@@ -1,110 +1,129 @@
+var createReport = require('docx-templates');
 var sizeOf = require('image-size');
-var express = require('express')
-var bodyParser = require('body-parser')
-var app = express()
+var express = require('express');
+var bodyParser = require('body-parser');
 const {
   encode,
   decode
 } = require('base64-arraybuffer');
+const port = 3000;
+var app = express();
 app.use(bodyParser.json({
-  limit: '50mb'
+  limit: '100mb'
 }));
 app.post('/', async (req, res) => {
   data = req.body.template;
   sampledata = JSON.parse(req.body.data);
   sampledata.images = req.body.images;
   width = 1;
-  height = 1;
-
-  // sampledata.images.forEach(element => {
-  //    fs.writeFile("/tmp/test" + sampledata.images.length, sampledata.images, function(err) {
-
-  //     if(err) {
-  //         return console.log(err);
-  //     }
-
-  //     console.log("The file was saved!");
-  // });
-  // });
-
-
-
-  const rap = await createReportWithImg(sampledata)
-
-  res.send(rap);
-})
-app.listen(3000)
-
-
-var createReport = require('docx-templates');
-const qrcode = require('yaqrcode');
+  try {
+    const rap = await createReportWithImg(sampledata);
+    res.send(rap);
+  } catch (e) {
+    console.log(e)
+    res.status(418).send(e);
+  }
+});
+app.listen(port, () => console.log(`App listening on port ${port}!`));
 
 function prepareData(sampledata) {
   var preparedData = {};
-  preparedData.name = sampledata['ado:publishing'].model._name;
-  preparedData.class = sampledata['ado:publishing'].model._class;
-  preparedData.images = sampledata.images;
-  preparedData.chapters = [];
-  for (let [index, val] of sampledata['ado:publishing'].model.notebook.chapter.entries()) {
-    var chapter = {}
-    chapter.name = val._name
-    chapter.attributes = []
-    var attributes = [].concat(val.attribute || []).concat(val.relation || []).concat(typeof val.group !== 'undefined' ? val.group.relation || [] : []).concat(typeof val.group !== 'undefined' ? val.group.attribute || [] : [])
-    for (let [aindex, aval] of attributes.entries()) {
-      var attri = {};
-      if (typeof aval._name !== 'undefined') {
-        attri.name = aval._name;
-        attri.value = getValue(aval)
-        attri.searchname = aval._idname;
-        chapter.attributes.push(attri);
-      } else if (typeof aval._class !== 'undefined') {
-        attri.name = aval._class;
-        attri.searchname = aval._idclass;
-        attri.value = getValue(aval)
-        chapter.attributes.push(attri);
-      } else {
-        attri.name = "noname";
-        attri.value = "noval";
-        chapter.attributes.push(attri);
-      }
-    }
-    preparedData.chapters[index] = chapter
-  }
-  preparedData.objects = [];
-  for (let [oindex, oval] of sampledata['ado:publishing'].model.object.entries()) {
-    var object = {}
-    object.name = oval._name;
-    object.class = oval._class;
-    object.ochapters = [];
-    /////////////////////////////////////////////////////////////////////////
-    for (let [index, val] of oval.notebook.chapter.entries()) {
-      var ochapter = {}
-      ochapter.name = val._name
-      ochapter.oattributes = []
-      var oattributes = [].concat(val.attribute || []).concat(val.relation || []).concat(typeof val.group !== 'undefined' ? val.group.relation || [] : []).concat(typeof val.group !== 'undefined' ? val.group.attribute || [] : [])
-
-      for (let [aindex, aval] of oattributes.entries()) {
-        var oattri = {};
+  if (typeof sampledata['ado:publishing'].model !== 'undefined') {
+    preparedData.name = sampledata['ado:publishing'].model._name;
+    preparedData.class = sampledata['ado:publishing'].model._class;
+    preparedData.images = sampledata.images;
+    preparedData.chapters = [];
+    for (let [index, val] of sampledata['ado:publishing'].model.notebook.chapter.entries()) {
+      var chapter = {}
+      chapter.name = val._name
+      chapter.attributes = []
+      var attributes = [].concat(val.attribute || []).concat(val.relation || []).concat(typeof val.group !== 'undefined' ? val.group.relation || [] : []).concat(typeof val.group !== 'undefined' ? val.group.attribute || [] : [])
+      for (let [aindex, aval] of attributes.entries()) {
+        var attri = {};
         if (typeof aval._name !== 'undefined') {
-          oattri.name = aval._name;
-          oattri.value = getValue(aval)
-          oattri.searchname = aval._idname;
-          ochapter.oattributes.push(oattri);
+          attri.name = aval._name;
+          attri.value = getValue(aval)
+          attri.searchname = aval._idname;
+          chapter.attributes.push(attri);
         } else if (typeof aval._class !== 'undefined') {
-          oattri.name = aval._class;
-          oattri.searchname = aval._idclass;
-          oattri.value = getValue(aval)
-          ochapter.oattributes.push(oattri);
+          attri.name = aval._class;
+          attri.searchname = aval._idclass;
+          attri.value = getValue(aval)
+          chapter.attributes.push(attri);
         } else {
-          oattri.name = "noname";
-          oattri.value = "noval";
-          ochapter.attributes.push(oattri);
+          attri.name = "noname";
+          attri.value = "noval";
+          chapter.attributes.push(attri);
         }
       }
-      object.ochapters[index] = ochapter
+      preparedData.chapters[index] = chapter
     }
-    //////////////////////////////////////////////////////////////
-    preparedData.objects[oindex] = object;
+    preparedData.objects = [];
+    for (let [oindex, oval] of sampledata['ado:publishing'].model.object.entries()) {
+      var object = {}
+      object.name = oval._name;
+      object.class = oval._class;
+      object.ochapters = [];
+      /////////////////////////////////////////////////////////////////////////
+      for (let [index, val] of oval.notebook.chapter.entries()) {
+        var ochapter = {}
+        ochapter.name = val._name
+        ochapter.oattributes = []
+        var oattributes = [].concat(val.attribute || []).concat(val.relation || []).concat(typeof val.group !== 'undefined' ? val.group.relation || [] : []).concat(typeof val.group !== 'undefined' ? val.group.attribute || [] : [])
+        for (let [aindex, aval] of oattributes.entries()) {
+          var oattri = {};
+          if (typeof aval._name !== 'undefined') {
+            oattri.name = aval._name;
+            oattri.value = getValue(aval)
+            oattri.searchname = aval._idname;
+            ochapter.oattributes.push(oattri);
+          } else if (typeof aval._class !== 'undefined') {
+            oattri.name = aval._class;
+            oattri.searchname = aval._idclass;
+            oattri.value = getValue(aval)
+            ochapter.oattributes.push(oattri);
+          } else {
+            oattri.name = "noname";
+            oattri.value = "noval";
+            ochapter.attributes.push(oattri);
+          }
+        }
+        object.ochapters[index] = ochapter
+      }
+      //////////////////////////////////////////////////////////////
+      preparedData.objects[oindex] = object;
+    }
+  } else if (typeof sampledata['ado:publishing'].object !== 'undefined') {
+    preparedData.name = sampledata['ado:publishing'].object._name;
+    preparedData.class = sampledata['ado:publishing'].object._class;
+    preparedData.images = "";
+    preparedData.chapters = [];
+    for (let [index, val] of sampledata['ado:publishing'].object.notebook.chapter.entries()) {
+      var chapter = {}
+      chapter.name = val._name
+      chapter.attributes = []
+      var attributes = [].concat(val.attribute || []).concat(val.relation || []).concat(typeof val.group !== 'undefined' ? val.group.relation || [] : []).concat(typeof val.group !== 'undefined' ? val.group.attribute || [] : [])
+      for (let [aindex, aval] of attributes.entries()) {
+        var attri = {};
+        if (typeof aval._name !== 'undefined') {
+          attri.name = aval._name;
+          attri.value = getValue(aval)
+          attri.searchname = aval._idname;
+          chapter.attributes.push(attri);
+        } else if (typeof aval._class !== 'undefined') {
+          attri.name = aval._class;
+          attri.searchname = aval._idclass;
+          attri.value = getValue(aval)
+          chapter.attributes.push(attri);
+        } else {
+          attri.name = "noname";
+          attri.value = "noval";
+          chapter.attributes.push(attri);
+        }
+      }
+      preparedData.chapters[index] = chapter
+    }
+    preparedData.objects = [];
   }
   return preparedData;
 };
@@ -150,7 +169,9 @@ function getValue(inp) {
     } else if (inp.attrval.attrvaltype._type === 'LONGSTRING' || inp.attrval.attrvaltype._type === 'UNSIGNED INTEGER' || inp.attrval.attrvaltype._type === 'FILE_POINTER' || inp.attrval.attrvaltype._type === 'SHORTSTRING') {
       if (typeof inp.attrval.value.p !== 'undefined') {
         return inp.attrval.value.p
-      } else return (inp.attrval.value);
+      } else {
+        return (inp.attrval.value);
+      }
     } else if (inp.attrval.attrvaltype._type === 'ADOSTRING' || inp.attrval.attrvaltype._type === 'STRING') {
       return (typeof inp.attrval.value.p === 'undefined' ? inp.attrval.value : inp.attrval.value.p);
     } else if (inp.attrval.attrvaltype._type === 'DOUBLE' || inp.attrval.attrvaltype._type === 'UTC') {
@@ -209,7 +230,6 @@ function gV(obj, searched) {
   }
   return null;
 }
-
 async function createReportWithImg(sampledata) {
   const prepareddata = {}
   prepareddata.model = await prepareData(sampledata);
@@ -223,47 +243,28 @@ async function createReportWithImg(sampledata) {
     return buf;
   }
   const template = await toBuffer(decode(data));
-
   const report = await createReport({
     template,
     data: prepareddata,
     cmdDelimiter: ['{', '}'],
     noSandbox: true,
     additionalJsContext: {
-      qr: async (contents) => {
-        const dataUrl = await qrcode(contents, {
-          size: 500
-        });
-        const data = await dataUrl.slice('data:image/gif;base64,'.length);
-        return {
-          width: 6,
-          height: 6,
-          data,
-          extension: '.gif'
-        };
-      },
-      insertImg: function (image,w) {
+      insertImg: function (image, w) {
         var img = Buffer.from(image, 'base64');
         var dimensions = sizeOf(img);
         var ratiow = dimensions.width / width < 1 ? dimensions.width / width : 1;
-        var ratioh = dimensions.height/dimensions.width;
-        // var ratioh = dimensions.height / height < 1 ? dimensions.height / height : 1;
+        var ratioh = dimensions.height / dimensions.width;
         width = dimensions.width;
-        // height = dimensions.height;
         if (ratiow !== 1) {
           width = 1
         }
-        // if (ratioh !== 1) {
-        //   height = 1
-        // }
         return {
           width: w * ratiow,
-          height: w*ratiow*ratioh,
+          height: w * ratiow * ratioh,
           data: image,
           extension: '.png'
         };
       },
-
       checkNonempty: (inp) => {
         if (typeof inp.attribute !== 'undefined' || typeof inp.relation !== 'undefined') {
           return true;
@@ -325,9 +326,12 @@ async function createReportWithImg(sampledata) {
         }
       },
       srt: (inp, by) => {
-        return inp.sort(function (a, b) {
-          return ('' + gV(a, by)).localeCompare(gV(b, by));
-        })
+        if (typeof inp !== 'undefined') {
+          return inp.sort(function (a, b) {
+            return ('' + gV(a, by)).localeCompare(gV(b, by));
+          })
+        }
+        return;
       },
       fE: (inp) => {
         function isEmpty(value) {
@@ -343,28 +347,28 @@ async function createReportWithImg(sampledata) {
       },
       fT: (inp, searched) => {
         function filT(value) {
-
-
           for (let [index, val] of searched.entries()) {
-            if (value.name === val)
+            if (value.name === val) {
               return false;
+            }
           }
           return true;
-
-
-
         }
         return inp.filter(filT);
       },
       gCN: (inp) => {
         if (typeof inp !== 'undefined') {
           return inp.name
-        } else return "";
+        } else {
+          return "";
+        }
       },
       gCV: (inp) => {
         if (typeof inp !== 'undefined') {
           return "vvv"
-        } else return "";
+        } else {
+          return "";
+        }
       },
       mI: (inp) => {
         var maxlength = 0
@@ -389,9 +393,6 @@ async function createReportWithImg(sampledata) {
       gV: gV
     }
   });
-
-
   const rs = await encode(report);
   return rs;
-
 }
