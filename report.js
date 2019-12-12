@@ -20,40 +20,58 @@ app.post('/', async (req, res) => {
     const rap = await createReportWithImg(sampledata);
     res.send(rap);
   } catch (e) {
-    console.log(e)
+    console.log(e);
     res.status(418).send(e);
   }
 });
 app.listen(port, () => console.log(`App listening on port ${port}!`));
-
+function getAttrs(val){
+  const result = [];
+  function getAttrsInn(obj) {
+      for (const prop in obj) {
+           const value = obj[prop];
+           if (typeof value === 'object') {
+           getAttrsInn(value);
+           }
+           else if (prop==='_controltype')
+           {
+              result.push(obj);
+           }
+      }
+  }
+  getAttrsInn(val);
+  return result;
+}
 function prepareData(sampledata) {
   var preparedData = {};
-  if (typeof sampledata['ado:publishing'].model !== 'undefined') {
+  if (sampledata['ado:publishing'].hasOwnProperty('model')) {
     preparedData.name = sampledata['ado:publishing'].model._name;
     preparedData.class = sampledata['ado:publishing'].model._class;
     preparedData.images = sampledata.images;
     preparedData.chapters = [];
     for (let [index, val] of sampledata['ado:publishing'].model.notebook.chapter.entries()) {
-      var chapter = {}
-      chapter.name = val._name
-      chapter.attributes = []
-      var attributes = [].concat(val.attribute || []).concat(val.relation || []).concat(typeof val.group !== 'undefined' ? val.group.relation || [] : []).concat(typeof val.group !== 'undefined' ? val.group.attribute || [] : [])
+      var chapter = {};
+      chapter.name = val._name;
+      chapter.attributes = [];
+      var attributes = getAttrs(val);
       for (let [aindex, aval] of attributes.entries()) {
         var attri = {};
-        if (typeof aval._name !== 'undefined') {
+        if (aval.hasOwnProperty('_name')) {
           attri.name = aval._name;
           attri.value = getValue(aval)
           attri.searchname = aval._idname;
+          if(attri.searchname!=='INSTANCE_CHANGE_HISTORY'){
           chapter.attributes.push(attri);
-        } else if (typeof aval._class !== 'undefined') {
+          }
+        } else if (aval.hasOwnProperty('_class')) {
           attri.name = aval._class;
           attri.searchname = aval._idclass;
           attri.value = getValue(aval)
-          chapter.attributes.push(attri);
+            chapter.attributes.push(attri);
         } else {
           attri.name = "noname";
           attri.value = "noval";
-          chapter.attributes.push(attri);
+            chapter.attributes.push(attri);
         }
       }
       preparedData.chapters[index] = chapter
@@ -69,15 +87,17 @@ function prepareData(sampledata) {
         var ochapter = {}
         ochapter.name = val._name
         ochapter.oattributes = []
-        var oattributes = [].concat(val.attribute || []).concat(val.relation || []).concat(typeof val.group !== 'undefined' ? val.group.relation || [] : []).concat(typeof val.group !== 'undefined' ? val.group.attribute || [] : [])
+        var oattributes = getAttrs(val);
         for (let [aindex, aval] of oattributes.entries()) {
           var oattri = {};
-          if (typeof aval._name !== 'undefined') {
+          if (aval.hasOwnProperty('_name')) {
             oattri.name = aval._name;
             oattri.value = getValue(aval)
             oattri.searchname = aval._idname;
+            if(oattri.searchname!=='INSTANCE_CHANGE_HISTORY'){
             ochapter.oattributes.push(oattri);
-          } else if (typeof aval._class !== 'undefined') {
+            }
+          } else if (aval.hasOwnProperty('_class')) {
             oattri.name = aval._class;
             oattri.searchname = aval._idclass;
             oattri.value = getValue(aval)
@@ -93,7 +113,10 @@ function prepareData(sampledata) {
       //////////////////////////////////////////////////////////////
       preparedData.objects[oindex] = object;
     }
-  } else if (typeof sampledata['ado:publishing'].object !== 'undefined') {
+    preparedData.objects.sort(function (a, b) {
+      return (''+a.name).localeCompare((''+b.name));
+    });
+  } else if (sampledata['ado:publishing'].hasOwnProperty('object')) {
     preparedData.name = sampledata['ado:publishing'].object._name;
     preparedData.class = sampledata['ado:publishing'].object._class;
     preparedData.images = "";
@@ -102,8 +125,8 @@ function prepareData(sampledata) {
       var chapter = {}
       chapter.name = val._name
       chapter.attributes = []
-      var attributes = [].concat(val.attribute || []).concat(val.relation || []).concat(typeof val.group !== 'undefined' ? val.group.relation || [] : []).concat(typeof val.group !== 'undefined' ? val.group.attribute || [] : [])
-      for (let [aindex, aval] of attributes.entries()) {
+      var attributes = getAttrs(val);
+       for (let [aindex, aval] of attributes.entries()) {
         var attri = {};
         if (typeof aval._name !== 'undefined') {
           attri.name = aval._name;
@@ -126,18 +149,17 @@ function prepareData(sampledata) {
     preparedData.objects = [];
   }
   return preparedData;
-};
-
+}
 function getComplexVals(passedval, passedinp) {
-  var vals = []
-  if (typeof passedinp.complexvalues.member !== 'undefined' && typeof passedinp.complexvalues.member[0] === 'undefined') {
+  var vals = [];
+  if (typeof passedinp.complexvalues !== 'undefined' && typeof passedinp.complexvalues.member !== 'undefined' && typeof passedinp.complexvalues.member[0] === 'undefined') {
     for (let [index2, val2] of passedinp.complexvalues.member.complexvalues.member.entries()) {
       if (val2._name === passedval._name) {
         vals.push(getValue(val2))
       }
     }
   }
-  if (typeof passedinp.complexvalues.member[0] !== 'undefined') {
+  if (typeof passedinp.complexvalues !== 'undefined' && typeof passedinp.complexvalues.member[0] !== 'undefined') {
     for (let [index, val] of passedinp.complexvalues.member.entries()) {
       for (let [index2, val2] of val.complexvalues.member.entries()) {
         if (val2._name === passedval._name) {
@@ -148,8 +170,8 @@ function getComplexVals(passedval, passedinp) {
   }
   return vals;
 }
-
 function getComplex(inp) {
+if (typeof inp.columns !=='undefined'){
   var complexarray = []
   for (let [index, val] of inp.columns.member.entries()) {
     var complexmember = {}
@@ -159,14 +181,14 @@ function getComplex(inp) {
   }
   return complexarray;
 }
-
+}
 function getValue(inp) {
   if (typeof inp.attrval !== 'undefined') {
     if (inp.attrval.attrvaltype._type === 'ENUM') {
       return (inp.attrval._name);
     } else if (inp.attrval.attrvaltype._type === 'BOOL') {
-      return (inp.attrval.value === '0' ? "no" : "yes");
-    } else if (inp.attrval.attrvaltype._type === 'LONGSTRING' || inp.attrval.attrvaltype._type === 'UNSIGNED INTEGER' || inp.attrval.attrvaltype._type === 'FILE_POINTER' || inp.attrval.attrvaltype._type === 'SHORTSTRING') {
+      return (inp.attrval.value === 0 ? "no" : "yes");
+    } else if (inp.attrval.attrvaltype._type === 'LONGSTRING' || inp.attrval.attrvaltype._type === 'UNSIGNED INTEGER' || inp.attrval.attrvaltype._type === 'FILE_POINTER' || inp.attrval.attrvaltype._type === 'SHORTSTRING'|| inp.attrval.attrvaltype._type === 'INTEGER') {
       if (typeof inp.attrval.value.p !== 'undefined') {
         return inp.attrval.value.p
       } else {
@@ -175,27 +197,36 @@ function getValue(inp) {
     } else if (inp.attrval.attrvaltype._type === 'ADOSTRING' || inp.attrval.attrvaltype._type === 'STRING') {
       return (typeof inp.attrval.value.p === 'undefined' ? inp.attrval.value : inp.attrval.value.p);
     } else if (inp.attrval.attrvaltype._type === 'DOUBLE' || inp.attrval.attrvaltype._type === 'UTC') {
-      return (inp.attrval["alternate-value"]);
+      return (inp.attrval["alternate-value"]||inp.attrval.value);
     } else if (inp.attrval.attrvaltype._type === 'INTERREF') {
-      return (inp.attrval.relation.link.endpoint._name);
+      if (inp.attrval.relation.hasOwnProperty('link'))
+      {
+        return (inp.attrval.relation.link.endpoint._name);
+      }
     } else {
       return inp.attrval.attrvaltype._type;
     }
-  } else if (typeof inp.link !== 'undefined' && typeof inp.link.endpoint !== 'undefined') {
+  }
+  else if(inp._type=== 'FILE_POINTER')
+  {
+    var splited = inp.value.param.split('/');
+    return splited[splited.length-1];
+  }
+
+  else if (typeof inp.link !== 'undefined' && typeof inp.link.endpoint !== 'undefined') {
     return (inp.link.endpoint._name);
   } else if (typeof inp.link !== 'undefined' && typeof inp.link[1] !== 'undefined') {
     var ret = '';
     for (let [index, val] of inp.link.entries()) {
-      ret = ret + val.endpoint._name + '\n';
+      ret = ret +'\u2022'+ val.endpoint._name + '\n';
     }
     return ret.replace(/^\s+|\s+$/g, "");
-  } else if (inp._complex === '1') {
+  } else if (inp._complex === 1) {
     return getComplex(inp);
   } else {
-    return "wrongtype";
+    return "";
   }
 }
-
 function gN(obj, searched) {
   for (const prop in obj) {
     const value = obj[prop];
@@ -212,7 +243,6 @@ function gN(obj, searched) {
   }
   return null;
 }
-
 function gV(obj, searched) {
   for (const prop in obj) {
     const value = obj[prop];
@@ -231,9 +261,24 @@ function gV(obj, searched) {
   return null;
 }
 async function createReportWithImg(sampledata) {
-  const prepareddata = {}
+  const prepareddata = {};
   prepareddata.model = await prepareData(sampledata);
-
+   function toArray(obj) {
+    for (const prop in obj) {
+        const value = obj[prop];
+        if (typeof value === 'object') {
+            toArray(value);
+        }
+        else if (typeof value === 'string') {
+          obj[prop]=value.replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"')
+          .replace(/&gt;/g, '>')
+          .replace(/&lt;/g, '<')
+          .replace(/&#039;/g, "'");
+        }
+    }
+}
+toArray(prepareddata);
   function toBuffer(ab) {
     var buf = Buffer.alloc(ab.byteLength);
     var view = new Uint8Array(ab);
@@ -247,7 +292,6 @@ async function createReportWithImg(sampledata) {
     template,
     data: prepareddata,
     cmdDelimiter: ['{', '}'],
-    noSandbox: true,
     additionalJsContext: {
       insertImg: function (image, w) {
         var img = Buffer.from(image, 'base64');
