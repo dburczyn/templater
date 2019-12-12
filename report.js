@@ -54,11 +54,11 @@ function prepareData(sampledata) {
       chapter.name = val._name;
       chapter.attributes = [];
       var attributes = getAttrs(val);
-      for (let [aindex, aval] of attributes.entries()) {
+      for (let [i,aval] of attributes.entries()) {
         var attri = {};
         if (aval.hasOwnProperty('_name')) {
           attri.name = aval._name;
-          attri.value = getValue(aval)
+          attri.value = getValue(aval);
           attri.searchname = aval._idname;
           if(attri.searchname!=='INSTANCE_CHANGE_HISTORY'){
           chapter.attributes.push(attri);
@@ -66,7 +66,7 @@ function prepareData(sampledata) {
         } else if (aval.hasOwnProperty('_class')) {
           attri.name = aval._class;
           attri.searchname = aval._idclass;
-          attri.value = getValue(aval)
+          attri.value = getValue(aval);
             chapter.attributes.push(attri);
         } else {
           attri.name = "noname";
@@ -74,44 +74,42 @@ function prepareData(sampledata) {
             chapter.attributes.push(attri);
         }
       }
-      preparedData.chapters[index] = chapter
+      preparedData.chapters[index] = chapter;
     }
     preparedData.objects = [];
     for (let [oindex, oval] of sampledata['ado:publishing'].model.object.entries()) {
-      var object = {}
+      var object = {};
       object.name = oval._name;
       object.class = oval._class;
       object.ochapters = [];
-      /////////////////////////////////////////////////////////////////////////
       for (let [index, val] of oval.notebook.chapter.entries()) {
-        var ochapter = {}
-        ochapter.name = val._name
-        ochapter.oattributes = []
-        var oattributes = getAttrs(val);
-        for (let [aindex, aval] of oattributes.entries()) {
+        var ochapter = {};
+        ochapter.name = val._name;
+        ochapter.attributes = [];
+        var attributes = getAttrs(val);
+        for (let [i,aval] of attributes.entries()) {
           var oattri = {};
           if (aval.hasOwnProperty('_name')) {
             oattri.name = aval._name;
-            oattri.value = getValue(aval)
+            oattri.value = getValue(aval);
             oattri.searchname = aval._idname;
             if(oattri.searchname!=='INSTANCE_CHANGE_HISTORY'){
-            ochapter.oattributes.push(oattri);
+            ochapter.attributes.push(oattri);
             }
           } else if (aval.hasOwnProperty('_class')) {
             oattri.name = aval._class;
             oattri.searchname = aval._idclass;
-            oattri.value = getValue(aval)
-            ochapter.oattributes.push(oattri);
+            oattri.value = getValue(aval);
+            ochapter.attributes.push(oattri);
           } else {
             oattri.name = "noname";
             oattri.value = "noval";
             ochapter.attributes.push(oattri);
           }
         }
-        object.ochapters[index] = ochapter
+        object.ochapters[index] = ochapter;
       }
-      //////////////////////////////////////////////////////////////
-      preparedData.objects[oindex] = object;
+            preparedData.objects[oindex] = object;
     }
     preparedData.objects.sort(function (a, b) {
       return (''+a.name).localeCompare((''+b.name));
@@ -122,29 +120,29 @@ function prepareData(sampledata) {
     preparedData.images = "";
     preparedData.chapters = [];
     for (let [index, val] of sampledata['ado:publishing'].object.notebook.chapter.entries()) {
-      var chapter = {}
-      chapter.name = val._name
-      chapter.attributes = []
+      var sochapter = {};
+      sochapter.name = val._name;
+      sochapter.attributes = [];
       var attributes = getAttrs(val);
-       for (let [aindex, aval] of attributes.entries()) {
-        var attri = {};
-        if (typeof aval._name !== 'undefined') {
-          attri.name = aval._name;
-          attri.value = getValue(aval)
-          attri.searchname = aval._idname;
-          chapter.attributes.push(attri);
-        } else if (typeof aval._class !== 'undefined') {
-          attri.name = aval._class;
-          attri.searchname = aval._idclass;
-          attri.value = getValue(aval)
-          chapter.attributes.push(attri);
+       for (let [i,aval] of attributes.entries()) {
+        var soattri = {};
+        if (aval.hasOwnProperty('_name')) {
+          soattri.name = aval._name;
+          soattri.value = getValue(aval);
+          soattri.searchname = aval._idname;
+          sochapter.attributes.push(soattri);
+        } else if (aval.hasOwnProperty('_class')) {
+          soattri.name = aval._class;
+          soattri.searchname = aval._idclass;
+          soattri.value = getValue(aval);
+          sochapter.attributes.push(soattri);
         } else {
-          attri.name = "noname";
-          attri.value = "noval";
-          chapter.attributes.push(attri);
+         soattri.name = "noname";
+         soattri.value = "noval";
+          sochapter.attributes.push(soattri);
         }
       }
-      preparedData.chapters[index] = chapter
+      preparedData.chapters[index] = sochapter;
     }
     preparedData.objects = [];
   }
@@ -152,51 +150,48 @@ function prepareData(sampledata) {
 }
 function getComplexVals(passedval, passedinp) {
   var vals = [];
-  if (typeof passedinp.complexvalues !== 'undefined' && typeof passedinp.complexvalues.member !== 'undefined' && typeof passedinp.complexvalues.member[0] === 'undefined') {
-    for (let [index2, val2] of passedinp.complexvalues.member.complexvalues.member.entries()) {
+  if(passedinp.hasOwnProperty('complexvalues') && passedinp.complexvalues.hasOwnProperty('member')){
+  if (!Array.isArray(passedinp.complexvalues.member)) {
+    for (let [i,val2] of passedinp.complexvalues.member.complexvalues.member.entries()) {
       if (val2._name === passedval._name) {
-        vals.push(getValue(val2))
+        vals.push(getValue(val2));
       }
     }
   }
-  if (typeof passedinp.complexvalues !== 'undefined' && typeof passedinp.complexvalues.member[0] !== 'undefined') {
-    for (let [index, val] of passedinp.complexvalues.member.entries()) {
-      for (let [index2, val2] of val.complexvalues.member.entries()) {
+  else if (Array.isArray(passedinp.complexvalues.member)) {
+    for (let [i,val] of passedinp.complexvalues.member.entries()) {
+      for (let [i,val2] of val.complexvalues.member.entries()) {
         if (val2._name === passedval._name) {
-          vals.push(getValue(val2))
+          vals.push(getValue(val2));
         }
       }
     }
   }
+}
   return vals;
 }
 function getComplex(inp) {
-if (typeof inp.columns !=='undefined'){
-  var complexarray = []
-  for (let [index, val] of inp.columns.member.entries()) {
-    var complexmember = {}
+if (inp.hasOwnProperty('columns')){
+  var complexarray = [];
+  for (let [i,val] of inp.columns.member.entries()) {
+    var complexmember = {};
     complexmember.name = val._name;
-    complexmember.values = getComplexVals(val, inp)
-    complexarray.push(complexmember)
+    complexmember.values = getComplexVals(val, inp);
+    complexarray.push(complexmember);
   }
   return complexarray;
 }
 }
 function getValue(inp) {
-  if (typeof inp.attrval !== 'undefined') {
+  if (inp.hasOwnProperty('attrval')) {
     if (inp.attrval.attrvaltype._type === 'ENUM') {
       return (inp.attrval._name);
     } else if (inp.attrval.attrvaltype._type === 'BOOL') {
-      return (inp.attrval.value === 0 ? "no" : "yes");
-    } else if (inp.attrval.attrvaltype._type === 'LONGSTRING' || inp.attrval.attrvaltype._type === 'UNSIGNED INTEGER' || inp.attrval.attrvaltype._type === 'FILE_POINTER' || inp.attrval.attrvaltype._type === 'SHORTSTRING'|| inp.attrval.attrvaltype._type === 'INTEGER') {
-      if (typeof inp.attrval.value.p !== 'undefined') {
-        return inp.attrval.value.p
-      } else {
-        return (inp.attrval.value);
+      return (inp.attrval.value === 0 ? "nie" : "tak");
+    } else if (inp.attrval.attrvaltype._type === 'LONGSTRING' || inp.attrval.attrvaltype._type === 'UNSIGNED INTEGER' || inp.attrval.attrvaltype._type === 'FILE_POINTER' || inp.attrval.attrvaltype._type === 'SHORTSTRING'|| inp.attrval.attrvaltype._type === 'INTEGER' || inp.attrval.attrvaltype._type === 'ADOSTRING' || inp.attrval.attrvaltype._type === 'STRING') {
+      return (inp.attrval.value.hasOwnProperty('p') ? inp.attrval.value.p : inp.attrval.value );
       }
-    } else if (inp.attrval.attrvaltype._type === 'ADOSTRING' || inp.attrval.attrvaltype._type === 'STRING') {
-      return (typeof inp.attrval.value.p === 'undefined' ? inp.attrval.value : inp.attrval.value.p);
-    } else if (inp.attrval.attrvaltype._type === 'DOUBLE' || inp.attrval.attrvaltype._type === 'UTC') {
+      else if (inp.attrval.attrvaltype._type === 'DOUBLE' || inp.attrval.attrvaltype._type === 'UTC') {
       return (inp.attrval["alternate-value"]||inp.attrval.value);
     } else if (inp.attrval.attrvaltype._type === 'INTERREF') {
       if (inp.attrval.relation.hasOwnProperty('link'))
@@ -213,11 +208,11 @@ function getValue(inp) {
     return splited[splited.length-1];
   }
 
-  else if (typeof inp.link !== 'undefined' && typeof inp.link.endpoint !== 'undefined') {
+  else if (inp.hasOwnProperty('link') && inp.link.hasOwnProperty('endpoint')) {
     return (inp.link.endpoint._name);
-  } else if (typeof inp.link !== 'undefined' && typeof inp.link[1] !== 'undefined') {
+  } else if (inp.hasOwnProperty('link') && Array.isArray(inp.link)) {
     var ret = '';
-    for (let [index, val] of inp.link.entries()) {
+    for (let [i,val] of inp.link.entries()) {
       ret = ret +'\u2022'+ val.endpoint._name + '\n';
     }
     return ret.replace(/^\s+|\s+$/g, "");
@@ -300,7 +295,7 @@ toArray(prepareddata);
         var ratioh = dimensions.height / dimensions.width;
         width = dimensions.width;
         if (ratiow !== 1) {
-          width = 1
+          width = 1;
         }
         return {
           width: w * ratiow,
@@ -309,71 +304,11 @@ toArray(prepareddata);
           extension: '.png'
         };
       },
-      checkNonempty: (inp) => {
-        if (typeof inp.attribute !== 'undefined' || typeof inp.relation !== 'undefined') {
-          return true;
-        } else {
-          return false;
-        }
-      },
-      getChapterName: (inp) => {
-        {
-          return (inp._name);
-        }
-      },
-      checkArray: (inp) => {
-        if ((typeof inp.attribute !== 'undefined' && typeof inp.attribute[0] !== 'undefined') || (typeof inp.relation !== 'undefined' && typeof inp.relation[0] !== 'undefined')) {
-          return true;
-        } else {
-          return false;
-        }
-      },
-      checkSingle: (inp) => {
-        if ((typeof inp.attribute !== 'undefined' && typeof inp.attribute[0] === 'undefined') || (typeof inp.relation !== 'undefined' && typeof inp.relation[0] === 'undefined')) {
-          return true;
-        } else {
-          return false;
-        }
-      },
-      getType: (inp) => {
-        if (typeof inp.attribute !== 'undefined' && typeof inp.attribute[0] !== 'undefined') {
-          return inp.attribute;
-        } else if (typeof inp.relation !== 'undefined' && typeof inp.relation[0] !== 'undefined') {
-          return inp.relation;
-        }
-      },
-      getName: (inp) => {
-        if (typeof inp._name !== 'undefined') {
-          return inp._name;
-        } else if (typeof inp._class !== 'undefined') {
-          return inp._class;
-        } else {
-          return "noname";
-        }
-      },
-      getSingleName: (inp) => {
-        if (typeof inp.attribute !== 'undefined' && typeof inp.attribute._name !== 'undefined') {
-          return inp.attribute._name;
-        } else if (typeof inp.relation !== 'undefined' && typeof inp.relation._class !== 'undefined') {
-          return inp.relation._class;
-        } else {
-          return "noname";
-        }
-      },
-      getSingleVal: (inp) => {
-        if (typeof inp.attribute !== 'undefined' && typeof inp.attribute.attrval !== 'undefined') {
-          return (inp.attribute.attrval.attrvaltype._type);
-        } else if (typeof inp.relation !== 'undefined' && typeof inp.relation.link !== 'undefined' && typeof inp.relation.link.endpoint !== 'undefined') {
-          return (inp.relation.link.endpoint._name);
-        } else {
-          return "wrongtype";
-        }
-      },
       srt: (inp, by) => {
         if (typeof inp !== 'undefined') {
           return inp.sort(function (a, b) {
             return ('' + gV(a, by)).localeCompare(gV(b, by));
-          })
+          });
         }
         return;
       },
@@ -383,15 +318,9 @@ toArray(prepareddata);
         }
         return inp.filter(isEmpty);
       },
-      foE: (inp) => {
-        function isEmpty(value) {
-          return value.oattributes.length > 0;
-        }
-        return inp.filter(isEmpty);
-      },
       fT: (inp, searched) => {
         function filT(value) {
-          for (let [index, val] of searched.entries()) {
+          for (let [i,val] of searched.entries()) {
             if (value.name === val) {
               return false;
             }
@@ -402,33 +331,26 @@ toArray(prepareddata);
       },
       gCN: (inp) => {
         if (typeof inp !== 'undefined') {
-          return inp.name
-        } else {
-          return "";
-        }
-      },
-      gCV: (inp) => {
-        if (typeof inp !== 'undefined') {
-          return "vvv"
+          return inp.name;
         } else {
           return "";
         }
       },
       mI: (inp) => {
-        var maxlength = 0
-        var outarray = []
-        for (let [index, val] of inp.entries()) {
+        var maxlength = 0;
+        var outarray = [];
+        for (let [i,val] of inp.entries()) {
           if (maxlength < val.values.length) {
-            maxlength = val.values.length
+            maxlength = val.values.length;
           }
         }
         for (var i = 0; i < maxlength; i++) {
-          var inarray = []
-          outarray.push(inarray)
+          var inarray = [];
+          outarray.push(inarray);
         }
-        for (let [index, val] of inp.entries()) {
+        for (let [i,val] of inp.entries()) {
           for (let [index2, val2] of val.values.entries()) {
-            outarray[index2].push(val2)
+            outarray[index2].push(val2);
           }
         }
         return outarray;
