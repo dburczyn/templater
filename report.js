@@ -1,6 +1,7 @@
 var createReport = require('docx-templates');
 var sizeOf = require('image-size');
 var express = require('express');
+var queue = require('express-queue');
 var bodyParser = require('body-parser');
 const {
   encode,
@@ -8,16 +9,20 @@ const {
 } = require('base64-arraybuffer');
 const port = 3000;
 var app = express();
+app.use(queue({ activeLimit: 1, queuedLimit: -1 }));
+
 app.use(bodyParser.json({
   limit: '100mb'
 }));
 app.post('/', async (req, res) => {
+  console.log("got request from: " +req.ip)
   data = req.body.template;
   sampledata = JSON.parse(req.body.data);
   sampledata.images = req.body.images;
   width = 1;
   try {
-    const rap = await createReportWithImg(sampledata);
+    const rap =  await createReportWithImg(sampledata);
+    console.log("sending back request to: " +req.ip)
     res.send(rap);
   } catch (e) {
     console.log(e);
@@ -86,8 +91,8 @@ function prepareData(sampledata) {
         var ochapter = {};
         ochapter.name = val._name;
         ochapter.attributes = [];
-        var attributes = getAttrs(val);
-        for (let [i,aval] of attributes.entries()) {
+        var oattributes = getAttrs(val);
+        for (let [i,aval] of oattributes.entries()) {
           var oattri = {};
           if (aval.hasOwnProperty('_name')) {
             oattri.name = aval._name;
@@ -123,8 +128,8 @@ function prepareData(sampledata) {
       var sochapter = {};
       sochapter.name = val._name;
       sochapter.attributes = [];
-      var attributes = getAttrs(val);
-       for (let [i,aval] of attributes.entries()) {
+      var soattributes = getAttrs(val);
+       for (let [i,aval] of soattributes.entries()) {
         var soattri = {};
         if (aval.hasOwnProperty('_name')) {
           soattri.name = aval._name;
@@ -359,6 +364,6 @@ toArray(prepareddata);
       gV: gV
     }
   });
-  const rs = await encode(report);
+  const rs = encode(report);
   return rs;
 }
