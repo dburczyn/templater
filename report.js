@@ -52,6 +52,7 @@ function prepareData(sampledata) {
   if (sampledata['ado:publishing'].hasOwnProperty('model')) {
     preparedData.name = sampledata['ado:publishing'].model._name;
     preparedData.class = sampledata['ado:publishing'].model._class;
+    preparedData.type = sampledata['ado:publishing'].model._idclass;
     preparedData.images = sampledata.images;
     preparedData.chapters = [];
     for (let [index, val] of sampledata['ado:publishing'].model.notebook.chapter.entries()) {
@@ -86,6 +87,7 @@ function prepareData(sampledata) {
       var object = {};
       object.name = oval._name;
       object.class = oval._class;
+      object.type = oval._idclass;
       object.ochapters = [];
       for (let [index, val] of oval.notebook.chapter.entries()) {
         var ochapter = {};
@@ -122,6 +124,7 @@ function prepareData(sampledata) {
   } else if (sampledata['ado:publishing'].hasOwnProperty('object')) {
     preparedData.name = sampledata['ado:publishing'].object._name;
     preparedData.class = sampledata['ado:publishing'].object._class;
+    preparedData.type = sampledata['ado:publishing'].object._idclass;
     preparedData.images = "";
     preparedData.chapters = [];
     for (let [index, val] of sampledata['ado:publishing'].object.notebook.chapter.entries()) {
@@ -319,7 +322,9 @@ toArray(prepareddata);
       },
       fE: (inp) => {
         function isEmpty(value) {
+
           return value.attributes.length > 0;
+
         }
         return inp.filter(isEmpty);
       },
