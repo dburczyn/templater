@@ -15,13 +15,37 @@ app.use(bodyParser.json({
   limit: '100mb'
 }));
 app.post('/', async (req, res) => {
-  console.log("got request from: " +req.ip)
+  console.log("got request from: " +req.ip);
   data = req.body.template;
-  sampledata = JSON.parse(req.body.data);
-  sampledata.images = req.body.images;
+  // console.log(req.body.data);
+  // sampledata = JSON.parse(req.body.data);
+  // parSEDsampledata = JSON.parse(sampledata);
+  parSEDsampledata = req.body.data;
+  parSEDsampledata=JSON.parse(parSEDsampledata);
+
+
+
+  // console.log(parSEDsampledata);
+  //  parSEDsampledata.images = req.body.images;
+  //  console.log(req.body.images);
+
+  parSEDsampledatawithimgs=[];
+
+  parSEDsampledata.forEach((element,i) => {
+    // console.log(i);
+     let datawithimg = JSON.parse(element);
+     if(req.body.images.length>0){
+     datawithimg.images=req.body.images[i].substring(0, req.body.images[i].length - 1).split(',');
+     }
+     parSEDsampledatawithimgs.push(datawithimg);
+  });
+
+// console.log(parSEDsampledatawithimgs);
+
+  // parSEDsampledata.images = req.body.images[0].substring(0, req.body.images[0].length - 1).split(',');
   width = 1;
   try {
-    const rap =  await createReportWithImg(sampledata);
+    const rap =  await createReportWithImg(parSEDsampledatawithimgs);
     console.log("sending back request to: " +req.ip)
     res.send(rap);
   } catch (e) {
@@ -47,13 +71,28 @@ function getAttrs(val){
   getAttrsInn(val);
   return result;
 }
-function prepareData(sampledata) {
-  var preparedData = {};
+function prepareData(parSEDsampledata) {
+
+  prepareddataarray=[];
+//  console.log(typeof parSEDsampledata)
+//  console.log(parSEDsampledata)
+// console.log(parSEDsampledata.length)
+// console.log(typeof parSEDsampledata)
+// console.log(Object.keys(parSEDsampledata))
+// console.log(parSEDsampledata)
+  parSEDsampledata.forEach(sampledata => {
+    // console.log(parSEDsampledata.images[0])
+    // sampledata.images=parSEDsampledata.images[0];
+    // sampledata.images="parSEDsampledata.images[0]";
+    var preparedData = {};
+    // sampledata=JSON.parse(sampledata);
   if (sampledata['ado:publishing'].hasOwnProperty('model')) {
     preparedData.name = sampledata['ado:publishing'].model._name;
     preparedData.class = sampledata['ado:publishing'].model._class;
     preparedData.type = sampledata['ado:publishing'].model._idclass;
+    // preparedData.images = sampledata.images;
     preparedData.images = sampledata.images;
+    // console.log(sampledata.images);
     preparedData.chapters = [];
     for (let [index, val] of sampledata['ado:publishing'].model.notebook.chapter.entries()) {
       var chapter = {};
@@ -154,7 +193,12 @@ function prepareData(sampledata) {
     }
     preparedData.objects = [];
   }
-  return preparedData;
+  prepareddataarray.push(preparedData);
+  });
+
+
+
+  return prepareddataarray;
 }
 function getComplexVals(passedval, passedinp) {
   var vals = [];
@@ -265,7 +309,7 @@ function gV(obj, searched) {
 }
 async function createReportWithImg(sampledata) {
   const prepareddata = {};
-  prepareddata.model = await prepareData(sampledata);
+  prepareddata.models = await prepareData(sampledata);
    function toArray(obj) {
     for (const prop in obj) {
         const value = obj[prop];
