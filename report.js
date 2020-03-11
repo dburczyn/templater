@@ -38,7 +38,7 @@ app.post('/', async (req, res) => {
   width = 1;
   try {
     const rap = await createReportWithImg(aParsedModelDataWithImages, sTemplateData);
-    console.log("sending back request to: " + req.ip)
+    console.log("sending back request to: " + req.ip);
     res.send(rap);
   } catch (e) {
     console.log(e);
@@ -66,15 +66,15 @@ function getAttrs(val) {
 
 function prepareData(aParsedModelData) {
   prepareddataarray = [];
-  aParsedModelData.forEach(sampledata => {
+  aParsedModelData.forEach(aModelData => {
     var preparedData = {};
-    if (sampledata['ado:publishing'].hasOwnProperty('model')) {
-      preparedData.name = sampledata['ado:publishing'].model._name;
-      preparedData.class = sampledata['ado:publishing'].model._class;
-      preparedData.type = sampledata['ado:publishing'].model._idclass;
-      preparedData.images = sampledata.images;
+    if (aModelData['ado:publishing'].hasOwnProperty('model')) {
+      preparedData.name = aModelData['ado:publishing'].model._name;
+      preparedData.class = aModelData['ado:publishing'].model._class;
+      preparedData.type = aModelData['ado:publishing'].model._idclass;
+      preparedData.images = aModelData.images;
       preparedData.chapters = [];
-      for (let [index, val] of sampledata['ado:publishing'].model.notebook.chapter.entries()) {
+      for (let [index, val] of aModelData['ado:publishing'].model.notebook.chapter.entries()) {
         var chapter = {};
         chapter.name = val._name;
         chapter.attributes = [];
@@ -102,7 +102,16 @@ function prepareData(aParsedModelData) {
         preparedData.chapters[index] = chapter;
       }
       preparedData.objects = [];
-      for (let [oindex, oval] of sampledata['ado:publishing'].model.object.entries()) {
+
+      var arraytoiterate=[];
+      if (typeof aModelData['ado:publishing'].model.object[Symbol.iterator] === 'function')
+{
+  arraytoiterate=aModelData['ado:publishing'].model.object;
+}
+else {
+  arraytoiterate.push(aModelData['ado:publishing'].model.object);
+    }
+      for (let [oindex, oval] of arraytoiterate.entries()) {
         var object = {};
         object.name = oval._name;
         object.class = oval._class;
@@ -140,13 +149,13 @@ function prepareData(aParsedModelData) {
       preparedData.objects.sort(function (a, b) {
         return ('' + a.name).localeCompare(('' + b.name));
       });
-    } else if (sampledata['ado:publishing'].hasOwnProperty('object')) {
-      preparedData.name = sampledata['ado:publishing'].object._name;
-      preparedData.class = sampledata['ado:publishing'].object._class;
-      preparedData.type = sampledata['ado:publishing'].object._idclass;
+    } else if (aModelData['ado:publishing'].hasOwnProperty('object')) {
+      preparedData.name = aModelData['ado:publishing'].object._name;
+      preparedData.class = aModelData['ado:publishing'].object._class;
+      preparedData.type = aModelData['ado:publishing'].object._idclass;
       preparedData.images = "";
       preparedData.chapters = [];
-      for (let [index, val] of sampledata['ado:publishing'].object.notebook.chapter.entries()) {
+      for (let [index, val] of aModelData['ado:publishing'].object.notebook.chapter.entries()) {
         var sochapter = {};
         sochapter.name = val._name;
         sochapter.attributes = [];
@@ -252,13 +261,14 @@ function gN(obj, searched) {
   for (const prop in obj) {
     const value = obj[prop];
     if (typeof value === 'object') {
+
       var sub = gN(value, searched);
       if (sub) {
         return sub;
       }
     } else {
       if (value === searched) {
-        return obj._name;
+        return obj.name;
       }
     }
   }
@@ -269,6 +279,7 @@ function gV(obj, searched) {
   for (const prop in obj) {
     const value = obj[prop];
     if (typeof value === 'object') {
+
       var sub = gV(value, searched);
       if (sub) {
         return sub;
@@ -281,9 +292,9 @@ function gV(obj, searched) {
   }
   return null;
 }
-async function createReportWithImg(sampledata, sTemplateData) {
+async function createReportWithImg(aModelData, sTemplateData) {
   const prepareddata = {};
-  prepareddata.models = await prepareData(sampledata);
+  prepareddata.models = await prepareData(aModelData);
 
   function toArray(obj) {
     for (const prop in obj) {
